@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils import timezone
 class QuizImage(models.Model):
     DIFFICULTY_CHOICES = [
         (1, '매우 쉬움'),
@@ -23,7 +23,7 @@ class QuizImage(models.Model):
 class PlayerScore(models.Model):
     player_name = models.CharField(max_length=50)
     score = models.IntegerField(default=0)
-    played_at = models.DateTimeField(auto_now_add=True)
+    played_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
         ordering = ['-score', '-played_at']

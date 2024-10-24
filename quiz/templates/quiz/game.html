@@ -4,92 +4,161 @@
 <head>
     <title>이미지 퀴즈 게임</title>
     <style>
-        .quiz-container {
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
             padding: 20px;
         }
+        
+        .quiz-container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
         .info-bar {
             display: flex;
             justify-content: space-between;
             margin-bottom: 20px;
-            font-size: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            font-size: 18px;
         }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .timer {
-            font-size: 24px;
-            color: #333;
-            margin: 10px 0;
+            font-size: 32px;
+            color: #1a73e8;
+            margin: 15px 0;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
+        
         .timer.warning {
-            color: #ff0000;
+            color: #dc3545;
+            animation: pulse 1s infinite;
         }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
         .quiz-image {
             max-width: 100%;
-            max-height: 400px;
+            max-height: 500px;
             margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+        
         .hint {
             color: #666;
             font-style: italic;
-            margin: 10px 0;
-            display: none;
-            padding: 10px;
-            background-color: #fff3cd;
-            border-radius: 5px;
-        }
-        .button-group {
             margin: 15px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #1a73e8;
         }
+        
+        .button-group {
+            margin: 25px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
         .answer-input {
-            padding: 10px;
+            padding: 12px 20px;
             font-size: 16px;
-            width: 200px;
-            margin-right: 10px;
+            width: 300px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
+        
+        .answer-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        
         .submit-btn {
-            padding: 10px 20px;
+            padding: 12px 30px;
             font-size: 16px;
-            background-color: #4CAF50;
+            background-color: #1a73e8;
             color: white;
             border: none;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+        
         .submit-btn:hover {
-            background-color: #45a049;
+            background-color: #1557b0;
+            transform: translateY(-2px);
         }
+        
         .skip-btn {
-            padding: 10px 20px;
+            padding: 12px 30px;
             font-size: 16px;
-            background-color: #f44336;
+            background-color: #dc3545;
             color: white;
             border: none;
+            border-radius: 8px;
             cursor: pointer;
-            margin-left: 10px;
+            transition: all 0.3s ease;
         }
+        
         .skip-btn:hover {
-            background-color: #da190b;
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .difficulty-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            background-color: #1a73e8;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="quiz-container">
         <div class="info-bar">
-            <div>플레이어: {{ request.session.player_name }}</div>
-            <div>점수: <span id="score">{{ score }}</span></div>
-            <div>문제: <span id="question-count">{{ question_count }}/20</span></div>
-            <div>난이도: <span id="difficulty">{{ difficulty }}</span></div>
+            <div class="info-item">👤 {{ request.session.player_name }}</div>
+            <div class="info-item">🎯 점수: <span id="score">{{ score }}</span></div>
+            <div class="info-item">✅ 맞춘 문제: <span id="total-solved">{{ total_solved }}</span></div>
+            <div class="info-item">
+                난이도: <span id="difficulty" class="difficulty-badge">{{ difficulty }}</span>
+            </div>
         </div>
 
         {% if error %}
             <p>{{ error }}</p>
         {% else %}
-            <div class="timer" id="timer">60</div>
+            <div class="timer" id="timer">5:00</div>
             <img src="{{ quiz.image.url }}" alt="퀴즈 이미지" class="quiz-image" id="quiz-image">
-            <div class="hint" id="hint">힌트: {{ quiz.hint }}</div>
+            <div class="hint" id="hint">💡 힌트: {{ quiz.hint }}</div>
             <input type="hidden" id="quiz-id" value="{{ quiz.id }}">
             <div class="button-group">
-                <input type="text" id="answer-input" class="answer-input" placeholder="정답 입력">
+                <input type="text" id="answer-input" class="answer-input" placeholder="정답을 입력하세요">
                 <button onclick="checkAnswer()" class="submit-btn">제출</button>
                 <button onclick="moveToNextQuestion(false, true)" class="skip-btn">넘어가기</button>
             </div>
@@ -97,96 +166,45 @@
     </div>
 
     <script>
-        let timeLeft = 60;
-        let timerInterval;
-        let hintShown = false;
+        let gameStartTime = {{ request.session.game_start_time|default:0 }} * 1000;
+        let totalTime = 300000; // 5분을 밀리초로 표현
 
         function updateTimer() {
-            const timerElement = document.getElementById('timer');
-            timerElement.textContent = timeLeft;
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - gameStartTime;
+            const remainingTime = Math.max(totalTime - elapsedTime, 0);
             
-            if (timeLeft <= 10) {
+            const minutes = Math.floor(remainingTime / 60000);
+            const seconds = Math.floor((remainingTime % 60000) / 1000);
+            
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (remainingTime <= 10000) { // 10초 이하
                 timerElement.classList.add('warning');
             }
             
-            if (timeLeft <= 0) {
+            if (remainingTime <= 0) {
                 clearInterval(timerInterval);
-                moveToNextQuestion(true);
-            } else {
-                timeLeft--;
-                
-                // 50초 남았을 때 힌트 표시
-                if (timeLeft === 50 && !hintShown) {
-                    document.getElementById('hint').style.display = 'block';
-                    hintShown = true;
-                }
+                // 시간 종료 시 서버에 마지막 상태 전송
+                moveToNextQuestion(true, false);  // timeout=true로 설정
             }
-        }
-
-        function startTimer() {
-            timeLeft = 60;
-            hintShown = false;
-            document.getElementById('timer').classList.remove('warning');
-            document.getElementById('hint').style.display = 'none';
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            startTimer();
         }
 
         function updateUI(data, resetTimerFlag = true) {
             document.getElementById('score').textContent = data.score;
-            document.getElementById('question-count').textContent = `${data.question_count}/20`;
+            document.getElementById('total-solved').textContent = data.total_solved;
             
             // 새로운 문제로 넘어갈 때만 이미지, 힌트 등을 업데이트
             if (data.correct || resetTimerFlag) {
                 document.getElementById('quiz-image').src = data.next_quiz.image_url;
                 document.getElementById('quiz-id').value = data.next_quiz.id;
-                document.getElementById('hint').style.display = 'none';
                 document.getElementById('hint').textContent = `힌트: ${data.next_quiz.hint}`;
                 document.getElementById('difficulty').textContent = data.next_quiz.difficulty;
-                hintShown = false;  // 힌트 표시 플래그 초기화
             }
             
             // 답 입력창은 항상 비움
             document.getElementById('answer-input').value = '';
-            
-            // 타이머 리셋은 resetTimerFlag가 true일 때만
-            if (resetTimerFlag) {
-                resetTimer();
-            } else {
-                // 틀린 답인 경우 힌트가 이미 보이고 있었다면 계속 보이도록 유지
-                if (timeLeft <= 50 && !hintShown) {
-                    document.getElementById('hint').style.display = 'block';
-                    hintShown = true;
-                }
-            }
-        }
-
-        function moveToNextQuestion(timeout = false, skipped = false) {
-            const quizId = document.getElementById('quiz-id').value;
-            
-            fetch('{% url "quiz:check_answer" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: `quiz_id=${quizId}&timeout=${timeout}&skipped=${skipped}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.game_completed) {
-                    alert(data.message);
-                    window.location.href = '{% url "quiz:index" %}';
-                } else {
-                    alert(data.message);
-                    // 타임아웃이나 스킵의 경우 항상 타이머 리셋
-                    updateUI(data, true);
-                }
-            });
         }
 
         function checkAnswer() {
@@ -208,8 +226,30 @@
                     window.location.href = '{% url "quiz:index" %}';
                 } else {
                     alert(data.message);
-                    // 정답이 틀린 경우에는 타이머를 리셋하지 않음
                     updateUI(data, data.correct);
+                }
+            });
+        }
+
+        function moveToNextQuestion(timeout = false, skipped = false) {
+            const quizId = document.getElementById('quiz-id').value;
+            
+            fetch('{% url "quiz:check_answer" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `quiz_id=${quizId}&timeout=${timeout}&skipped=${skipped}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.game_completed) {
+                    alert(data.message);
+                    window.location.href = '{% url "quiz:index" %}';
+                } else {
+                    alert(data.message);
+                    updateUI(data, true);
                 }
             });
         }
@@ -221,8 +261,8 @@
             }
         });
 
-        // 페이지 로드시 타이머 시작
-        startTimer();
+        // 타이머 시작
+        const timerInterval = setInterval(updateTimer, 1000);
     </script>
 </body>
 </html>

@@ -1,92 +1,168 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>퀴즈 게임</title>
+    <title>이미지 퀴즈 게임</title>
     <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 50px auto;
             text-align: center;
-            padding: 20px;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        
         .title {
-            font-size: 32px;
-            margin-bottom: 30px;
-            color: #333;
+            font-size: 40px;
+            margin-bottom: 40px;
+            color: #1a73e8;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
+        
         .input-group {
-            margin: 20px 0;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
         }
+        
         .name-input {
-            padding: 10px;
+            padding: 12px 20px;
             font-size: 16px;
-            width: 200px;
-            margin-right: 10px;
+            width: 250px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
+        
+        .name-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        
         .start-btn {
-            padding: 10px 20px;
+            padding: 12px 30px;
             font-size: 16px;
-            background-color: #4CAF50;
+            background-color: #1a73e8;
             color: white;
             border: none;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+        
         .start-btn:hover {
-            background-color: #45a049;
+            background-color: #1557b0;
+            transform: translateY(-2px);
         }
+        
         .leaderboard {
-            margin-top: 40px;
-            text-align: left;
+            margin-top: 50px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
         }
+        
         .leaderboard h2 {
             text-align: center;
-            color: #333;
+            color: #1a73e8;
+            font-size: 24px;
+            margin-bottom: 20px;
         }
+        
         .score-list {
             list-style: none;
             padding: 0;
+            max-width: 600px;
+            margin: 0 auto;
         }
+        
         .score-item {
-            padding: 10px;
-            margin: 5px 0;
-            background-color: #f5f5f5;
-            border-radius: 5px;
+            padding: 15px 20px;
+            margin: 8px 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease;
         }
+        
+        .score-item:hover {
+            transform: translateX(5px);
+        }
+        
         .score-item:nth-child(-n+3) {
-            background-color: #fff3cd;
+            background-color: #fff8e1;
+            border-left: 4px solid #ffd700;
         }
+        
+        .score-rank {
+            font-weight: bold;
+            color: #1a73e8;
+            margin-right: 10px;
+        }
+        
+        .score-info {
+            flex-grow: 1;
+            text-align: left;
+            margin-left: 10px;
+        }
+        
+        .score-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
         .admin-controls {
-            margin-top: 20px;
-            text-align: center;
+            margin-top: 30px;
         }
+        
         .admin-btn {
             padding: 10px 20px;
             background-color: #dc3545;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+        
         .admin-btn:hover {
             background-color: #c82333;
+            transform: translateY(-2px);
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1 class="title">이미지 퀴즈 게임</h1>
+        <h1 class="title">🎮 이미지 퀴즈 게임 🎮</h1>
         <div class="input-group">
-            <input type="text" id="playerName" class="name-input" placeholder="이름을 입력하세요" required>
+            <input type="text" id="playerName" class="name-input" placeholder="닉네임을 입력하세요" required>
             <button onclick="startGame()" class="start-btn">게임 시작</button>
         </div>
         
         <div class="leaderboard">
-            <h2>🏆 리더보드 TOP 10 🏆</h2>
+            <h2>🏆 명예의 전당 TOP 10 🏆</h2>
             <ul class="score-list">
                 {% for score in top_scores %}
                 <li class="score-item">
-                    {{ forloop.counter }}등: {{ score.player_name }} - {{ score.score }}점
-                    <span style="float: right; font-size: 0.8em; color: #666;">
+                    <span class="score-rank">{{ forloop.counter }}위</span>
+                    <div class="score-info">
+                        <strong>{{ score.player_name }}</strong> - {{ score.score }}점
+                    </div>
+                    <span class="score-time">
                         {{ score.played_at|date:"Y-m-d H:i" }}
                     </span>
                 </li>
