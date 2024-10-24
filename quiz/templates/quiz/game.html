@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>이미지 퀴즈 게임</title>
+    <style>
+        .quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 20px;
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .timer {
+            font-size: 24px;
+            color: #333;
+            margin: 10px 0;
+        }
+        .timer.warning {
+            color: #ff0000;
+        }
+        .quiz-image {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px 0;
+        }
+        .hint {
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+            display: none;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 5px;
+        }
+        .button-group {
+            margin: 15px 0;
+        }
+        .answer-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .submit-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+        .skip-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .skip-btn:hover {
+            background-color: #da190b;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="info-bar">
+            <div>플레이어: {{ request.session.player_name }}</div>
+            <div>점수: <span id="score">{{ score }}</span></div>
+            <div>문제: <span id="question-count">{{ question_count }}/20</span></div>
+            <div>난이도: <span id="difficulty">{{ difficulty }}</span></div>
+        </div>
+
+        {% if error %}
+            <p>{{ error }}</p>
+        {% else %}
+            <div class="timer" id="timer">60</div>
+            <img src="{{ quiz.image.url }}" alt="퀴즈 이미지" class="quiz-image" id="quiz-image">
+            <div class="hint" id="hint">힌트: {{ quiz.hint }}</div>
+            <input type="hidden" id="quiz-id" value="{{ quiz.id }}">
+            <div class="button-group">
+                <input type="text" id="answer-input" class="answer-input" placeholder="정답 입력">
+                <button onclick="checkAnswer()" class="submit-btn">제출</button>
+                <button onclick="moveToNextQuestion(false, true)" class="skip-btn">넘어가기</button>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let timeLeft = 60;
+        let timerInterval;
+        let hintShown = false;
+
+        function updateTimer() {
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = timeLeft;
+            
+            if (timeLeft <= 10) {
+                timerElement.classList.add('warning');
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                moveToNextQuestion(true);
+            } else {
+                timeLeft--;
+                
+                // 50초 남았을 때 힌트 표시
+                if (timeLeft === 50 && !hintShown) {
+                    document.getElementById('hint').style.display = 'block';
+                    hintShown = true;
+                }
+            }
+        }
+
+        function startTimer() {
+            timeLeft = 60;
+            hintShown = false;
+            document.getElementById('timer').classList.remove('warning');
+            document.getElementById('hint').style.display = 'none';
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            startTimer();
+        }
+
+        function updateUI(data, resetTimerFlag = true) {
+            document.getElementById('score').textContent = data.score;
+            document.getElementById('question-count').textContent = `${data.question_count}/20`;
+            
+            // 새로운 문제로 넘어갈 때만 이미지, 힌트 등을 업데이트
+            if (data.correct || resetTimerFlag) {
+                document.getElementById('quiz-image').src = data.next_quiz.image_url;
+                document.getElementById('quiz-id').value = data.next_quiz.id;
+                document.getElementById('hint').style.display = 'none';
+                document.getElementById('hint').textContent = `힌트: ${data.next_quiz.hint}`;
+                document.getElementById('difficulty').textContent = data.next_quiz.difficulty;
+                hintShown = false;  // 힌트 표시 플래그 초기화
+            }
+            
+            // 답 입력창은 항상 비움
+            document.getElementById('answer-input').value = '';
+            
+            // 타이머 리셋은 resetTimerFlag가 true일 때만
+            if (resetTimerFlag) {
+                resetTimer();
+            } else {
+                // 틀린 답인 경우 힌트가 이미 보이고 있었다면 계속 보이도록 유지
+                if (timeLeft <= 50 && !hintShown) {
+                    document.getElementById('hint').style.display = 'block';
+                    hintShown = true;
+                }
+            }
+        }
+
+        function moveToNextQuestion(timeout = false, skipped = false) {
+            const quizId = document.getElementById('quiz-id').value;
+            
+            fetch('{% url "quiz:check_answer" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `quiz_id=${quizId}&timeout=${timeout}&skipped=${skipped}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.game_completed) {
+                    alert(data.message);
+                    window.location.href = '{% url "quiz:index" %}';
+                } else {
+                    alert(data.message);
+                    // 타임아웃이나 스킵의 경우 항상 타이머 리셋
+                    updateUI(data, true);
+                }
+            });
+        }
+
+        function checkAnswer() {
+            const answer = document.getElementById('answer-input').value;
+            const quizId = document.getElementById('quiz-id').value;
+            
+            fetch('{% url "quiz:check_answer" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `answer=${answer}&quiz_id=${quizId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.game_completed) {
+                    alert(data.message);
+                    window.location.href = '{% url "quiz:index" %}';
+                } else {
+                    alert(data.message);
+                    // 정답이 틀린 경우에는 타이머를 리셋하지 않음
+                    updateUI(data, data.correct);
+                }
+            });
+        }
+
+        // Enter 키로 제출
+        document.getElementById('answer-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // 페이지 로드시 타이머 시작
+        startTimer();
+    </script>
+</body>
+</html>

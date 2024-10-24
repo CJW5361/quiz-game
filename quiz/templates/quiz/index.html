@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>퀴즈 게임</title>
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+            padding: 20px;
+        }
+        .title {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .name-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .start-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .start-btn:hover {
+            background-color: #45a049;
+        }
+        .leaderboard {
+            margin-top: 40px;
+            text-align: left;
+        }
+        .leaderboard h2 {
+            text-align: center;
+            color: #333;
+        }
+        .score-list {
+            list-style: none;
+            padding: 0;
+        }
+        .score-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .score-item:nth-child(-n+3) {
+            background-color: #fff3cd;
+        }
+        .admin-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .admin-btn {
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .admin-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">이미지 퀴즈 게임</h1>
+        <div class="input-group">
+            <input type="text" id="playerName" class="name-input" placeholder="이름을 입력하세요" required>
+            <button onclick="startGame()" class="start-btn">게임 시작</button>
+        </div>
+        
+        <div class="leaderboard">
+            <h2>🏆 리더보드 TOP 10 🏆</h2>
+            <ul class="score-list">
+                {% for score in top_scores %}
+                <li class="score-item">
+                    {{ forloop.counter }}등: {{ score.player_name }} - {{ score.score }}점
+                    <span style="float: right; font-size: 0.8em; color: #666;">
+                        {{ score.played_at|date:"Y-m-d H:i" }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% if request.user.is_staff %}
+        <div class="admin-controls">
+            <button onclick="resetLeaderboard()" class="admin-btn">리더보드 초기화</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function startGame() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('이름을 입력해주세요!');
+                return;
+            }
+            
+            fetch('{% url "quiz:save_player_name" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `player_name=${playerName}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{% url "quiz:game" %}';
+                }
+            });
+        }
+
+        function resetLeaderboard() {
+            if (confirm('정말 리더보드를 초기화하시겠습니까?')) {
+                fetch('{% url "quiz:reset_leaderboard" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        // Enter 키로 시작
+        document.getElementById('playerName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+    </script>
+</body>
+</html>
