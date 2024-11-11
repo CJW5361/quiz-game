@@ -1,7 +1,8 @@
 # 이미지 퀴즈 게임
 
 ## 프로젝트 소개
-
+https://playgroundbywook.pythonanywhere.com/
+![image](https://github.com/user-attachments/assets/0ee60e5e-ae71-490f-b829-fe09441c741f)
 
 ## 게임 규칙
 
